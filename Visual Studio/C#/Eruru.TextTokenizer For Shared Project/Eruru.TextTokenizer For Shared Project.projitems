@@ -10,8 +10,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)TextTokenizer.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TextTokenizerAPI.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TextTokenizerApi.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TextTokenizerException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TextTokenizerToken.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TextTokenizerTokenType.cs" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Eruru.TextTokenizer</RootNamespace>
+    <AssemblyName>Eruru.TextTokenizer_For_.NET_Standard_2.0</AssemblyName>
+  </PropertyGroup>
+
+  <Import Project="..\Eruru.TextTokenizer For Shared Project\Eruru.TextTokenizer For Shared Project.projitems" Label="Shared" />
+
+</Project>

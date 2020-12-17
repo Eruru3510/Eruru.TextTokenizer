@@ -9,10 +9,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eruru.TextTokenizer_For_.NET_Framework_2.0", "Eruru.TextTokenizer For .NET Framework 2.0\Eruru.TextTokenizer_For_.NET_Framework_2.0.csproj", "{3C6C44FC-E67D-4109-871B-A580C3A8413F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eruru.TextTokenizer_For_.NET_Standard_2.0", "Eruru.TextTokenizer For .NET Standard 2.0\Eruru.TextTokenizer_For_.NET_Standard_2.0.csproj", "{D80A5E6A-AE4E-4C38-9AEB-A467D92B0490}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Eruru.TextTokenizer For Shared Project\Eruru.TextTokenizer For Shared Project.projitems*{3ac244e4-bfab-4be8-97ba-cc0893e71e99}*SharedItemsImports = 13
 		Eruru.TextTokenizer For Shared Project\Eruru.TextTokenizer For Shared Project.projitems*{3c6c44fc-e67d-4109-871b-a580c3a8413f}*SharedItemsImports = 4
+		Eruru.TextTokenizer For Shared Project\Eruru.TextTokenizer For Shared Project.projitems*{d80a5e6a-ae4e-4c38-9aeb-a467d92b0490}*SharedItemsImports = 5
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +30,10 @@ Global
 		{3C6C44FC-E67D-4109-871B-A580C3A8413F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C6C44FC-E67D-4109-871B-A580C3A8413F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C6C44FC-E67D-4109-871B-A580C3A8413F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D80A5E6A-AE4E-4C38-9AEB-A467D92B0490}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D80A5E6A-AE4E-4C38-9AEB-A467D92B0490}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D80A5E6A-AE4E-4C38-9AEB-A467D92B0490}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D80A5E6A-AE4E-4C38-9AEB-A467D92B0490}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
