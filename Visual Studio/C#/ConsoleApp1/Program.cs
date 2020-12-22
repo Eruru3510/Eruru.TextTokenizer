@@ -19,7 +19,7 @@ namespace ConsoleApp1 {
 						<!doctype html>
 						<html>
 							<head>
-								<meta charset='utf-8' a a/>
+								<meta charset='utf-8'/>
 								<title>网页</title>
 								<style>
 									* {}
@@ -39,9 +39,10 @@ namespace ConsoleApp1 {
 				{ '/', HtmlTokenType.ForwardSlash },
 				{ '=', HtmlTokenType.SignOfEquality }
 			};
-			textTokenizer.KeywordEnds.Add ('=');
-			textTokenizer.KeywordEnds.Add ('/');
-			textTokenizer.KeywordEnds.Add ('>');
+			textTokenizer.AllowCharactersBreakKeyword = false;
+			textTokenizer.BreakKeywordCharacters.Add ('=');
+			textTokenizer.BreakKeywordCharacters.Add ('/');
+			textTokenizer.BreakKeywordCharacters.Add ('>');
 			string name = null;
 			while (textTokenizer.MoveNext ()) {
 				Console.WriteLine ($"{PadRight (textTokenizer.Current.Index)} " +
@@ -80,9 +81,6 @@ namespace ConsoleApp1 {
 				{ "true" , JsonTokenType.Bool},
 				{ "false" , JsonTokenType.Bool}
 			};
-			textTokenizer.KeywordEnds.Add (',');
-			textTokenizer.KeywordEnds.Add (']');
-			textTokenizer.KeywordEnds.Add ('}');
 			Print (textTokenizer);
 		}
 

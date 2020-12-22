@@ -16,7 +16,8 @@ namespace Eruru.TextTokenizer {
 		public bool AllowNumber { get; set; } = true;
 		public bool AllowString { get; set; } = true;
 		public bool AllowSingleQuotString { get; set; } = true;
-		public List<char> KeywordEnds { get; private set; } = new List<char> ();
+		public bool AllowCharactersBreakKeyword { get; set; } = true;
+		public List<char> BreakKeywordCharacters { get; private set; } = new List<char> ();
 		public TextReader TextReader {
 
 			private get {
@@ -39,8 +40,8 @@ namespace Eruru.TextTokenizer {
 
 		static readonly char[] NumberCharacters = { '+', '-' };
 
-		readonly Dictionary<char, T> Characters = new Dictionary<char, T> ();
-		readonly Dictionary<string, T> Keywords = new Dictionary<string, T> ();
+		readonly Dictionary<char, KeyValuePair<T, object>> Characters = new Dictionary<char, KeyValuePair<T, object>> ();
+		readonly Dictionary<string, KeyValuePair<T, object>> Keywords = new Dictionary<string, KeyValuePair<T, object>> ();
 
 		TextReader _TextReader;
 		TextTokenizerToken<T> _Current;
@@ -64,13 +65,22 @@ namespace Eruru.TextTokenizer {
 		}
 
 		public void Add (char character, T type) {
-			Characters.Add (character, type);
+			Characters.Add (character, new KeyValuePair<T, object> (type, character));
+		}
+		public void Add (char character, T type, object value) {
+			Characters.Add (character, new KeyValuePair<T, object> (type, value));
 		}
 		public void Add (string keyword, T type) {
 			if (keyword is null) {
 				throw new ArgumentNullException (nameof (keyword));
 			}
-			Keywords.Add (keyword, type);
+			Keywords.Add (keyword, new KeyValuePair<T, object> (type, keyword));
+		}
+		public void Add (string keyword, T type, object value) {
+			if (keyword is null) {
+				throw new ArgumentNullException (nameof (keyword));
+			}
+			Keywords.Add (keyword, new KeyValuePair<T, object> (type, value));
 		}
 
 		public string ReadTo (string end, bool allowNoEnd = false) {
@@ -149,7 +159,7 @@ namespace Eruru.TextTokenizer {
 			StringBuilder stringBuilder = new StringBuilder ();
 			while (TextReader.Peek () > -1) {
 				PeekCharacter ();
-				if (char.IsWhiteSpace (Character) || KeywordEnds.Contains (Character)) {
+				if (char.IsWhiteSpace (Character) || BreakKeywordCharacters.Contains (Character) || (AllowCharactersBreakKeyword && Characters.ContainsKey (Character))) {
 					if (stringBuilder.Length == 0) {
 						stringBuilder.Append (Character);
 						Read ();
@@ -250,10 +260,10 @@ namespace Eruru.TextTokenizer {
 				Current = token;
 				return false;
 			}
-			if (Characters.TryGetValue (Character, out T Type)) {
-				token.Type = Type;
+			if (Characters.TryGetValue (Character, out KeyValuePair<T, object> type)) {
+				token.Type = type.Key;
 				token.Length = 1;
-				token.Value = Character;
+				token.Value = type.Value;
 				Read ();
 				Current = token;
 				return true;
@@ -292,11 +302,12 @@ namespace Eruru.TextTokenizer {
 			}
 			text = ReadKeyword ();
 			token.Length = text.Length;
-			token.Value = text;
-			if (Keywords.TryGetValue (text, out Type)) {
-				token.Type = Type;
+			if (Keywords.TryGetValue (text, out type)) {
+				token.Type = type.Key;
+				token.Value = type.Value;
 			} else {
 				token.Type = UnknownType;
+				token.Value = text;
 			}
 			Current = token;
 			return true;
