@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -39,6 +40,7 @@ namespace Eruru.TextTokenizer {
 		public int Index { get; private set; }
 
 		static readonly char[] NumberCharacters = { '+', '-' };
+		static readonly char[] DecimalCharacters = { '.', 'E', 'e' };
 
 		readonly Dictionary<char, KeyValuePair<T, object>> Characters = new Dictionary<char, KeyValuePair<T, object>> ();
 		readonly Dictionary<string, KeyValuePair<T, object>> Keywords = new Dictionary<string, KeyValuePair<T, object>> ();
@@ -84,8 +86,8 @@ namespace Eruru.TextTokenizer {
 		}
 
 		public string ReadTo (string end, bool allowNoEnd = false) {
-			if (string.IsNullOrEmpty (end)) {
-				throw new ArgumentException ($"“{nameof (end)}”不能是 Null 或为空", nameof (end));
+			if (end is null) {
+				throw new ArgumentNullException (nameof (end));
 			}
 			StringBuilder stringBuilder = new StringBuilder ();
 			while (TextReader.Peek () > -1) {
@@ -108,7 +110,7 @@ namespace Eruru.TextTokenizer {
 			while (TextReader.Peek () > -1) {
 				PeekCharacter ();
 				if (!char.IsDigit (Character) && Array.IndexOf (NumberCharacters, Character) == -1) {
-					if (!isFloat && Character == '.') {
+					if (Array.IndexOf (DecimalCharacters, Character) != -1) {
 						isFloat = true;
 					} else {
 						break;
@@ -204,8 +206,8 @@ namespace Eruru.TextTokenizer {
 			if (stringBuilder is null) {
 				throw new ArgumentNullException (nameof (stringBuilder));
 			}
-			if (string.IsNullOrEmpty (end)) {
-				throw new ArgumentException ($"“{nameof (end)}”不能是 Null 或为空", nameof (end));
+			if (end is null) {
+				throw new ArgumentNullException (nameof (end));
 			}
 			if (Character != end[end.Length - 1]) {
 				return false;
@@ -273,7 +275,7 @@ namespace Eruru.TextTokenizer {
 				text = ReadNumber (out bool isFloat);
 				token.Length = text.Length;
 				if (isFloat) {
-					if (decimal.TryParse (text, out decimal result)) {
+					if (decimal.TryParse (text, NumberStyles.Float, null, out decimal result)) {
 						token.Type = DecimalType;
 						token.Value = result;
 						Current = token;

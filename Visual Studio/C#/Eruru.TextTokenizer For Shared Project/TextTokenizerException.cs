@@ -6,8 +6,8 @@ namespace Eruru.TextTokenizer {
 	public class TextTokenizerException<T> : Exception where T : Enum {
 
 		public TextTokenizerException (string message, TextTokenizer<T> textTokenizer) {
-			if (TextTokenizerApi.IsNullOrWhiteSpace (message)) {
-				throw new ArgumentException ($"“{nameof (message)}”不能为 Null 或空白", nameof (message));
+			if (message is null) {
+				throw new ArgumentNullException (nameof (message));
 			}
 			StringBuilder stringBuilder = new StringBuilder ();
 			stringBuilder.AppendLine (message);

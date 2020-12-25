@@ -64,7 +64,7 @@ namespace ConsoleApp1 {
 
 		static void TestJson () {
 			TextTokenizer<JsonTokenType> textTokenizer = new TextTokenizer<JsonTokenType> (
-				new StringReader ("{'key': \"\\\"Hello, World!\\\"\", [null, true, false, +1, -1, 1.0, 1.1, '']}"),
+				new StringReader ("{'key': \"\\\"Hello, World!\\\"\", [null, true, false, +1, -1, 1.0, 1.1, '', 5E3]}"),
 				JsonTokenType.End,
 				JsonTokenType.Unknown,
 				JsonTokenType.Integer,
