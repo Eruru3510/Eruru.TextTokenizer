@@ -56,9 +56,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Eruru.TextTokenizer For .NET Standard 2.0\Eruru.TextTokenizer_For_.NET_Standard_2.0.csproj">
-      <Project>{d80a5e6a-ae4e-4c38-9aeb-a467d92b0490}</Project>
-      <Name>Eruru.TextTokenizer_For_.NET_Standard_2.0</Name>
+    <ProjectReference Include="..\Eruru.TextTokenizer\Eruru.TextTokenizer.csproj">
+      <Project>{bf0e2739-a36b-4a90-8db2-96f5ac47b2b5}</Project>
+      <Name>Eruru.TextTokenizer</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />

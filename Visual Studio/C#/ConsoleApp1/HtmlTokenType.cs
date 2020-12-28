@@ -7,11 +7,15 @@
 		LeftAngleBracket,
 		RightAngleBracket,
 		ExclamationMark,
-		ForwardSlash,
-		SignOfEquality,
+		Slash,
+		EqualSing,
 		Integer,
 		Decimal,
-		String
+		String,
+		BlockComment,
+		DefineTag,
+		SingleTag,
+		EndTag
 
 	}
 

@@ -4,10 +4,10 @@ namespace Eruru.TextTokenizer {
 
 	public struct TextTokenizerToken<T> where T : Enum {
 
-		public T Type;
-		public int Index;
-		public int Length;
-		public object Value;
+		public T Type { get; }
+		public int StartIndex { get; }
+		public int Length { get; }
+		public object Value { get; }
 		public int Int {
 
 			get => ToInt ();
@@ -37,6 +37,13 @@ namespace Eruru.TextTokenizer {
 
 			get => ToString ();
 
+		}
+
+		public TextTokenizerToken (T type, int startIndex, int length, object value) {
+			Type = type;
+			StartIndex = startIndex;
+			Length = length;
+			Value = value;
 		}
 
 		public int ToInt (int defaultValue = default) {

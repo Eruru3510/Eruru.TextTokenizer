@@ -5,7 +5,10 @@ namespace Eruru.TextTokenizer {
 
 	public class TextTokenizerException<T> : Exception where T : Enum {
 
-		public TextTokenizerException (string message, TextTokenizer<T> textTokenizer) {
+		public TextTokenizerException (TextTokenizer<T> textTokenizer, string message) {
+			if (textTokenizer is null) {
+				throw new ArgumentNullException (nameof (textTokenizer));
+			}
 			if (message is null) {
 				throw new ArgumentNullException (nameof (message));
 			}
@@ -13,7 +16,7 @@ namespace Eruru.TextTokenizer {
 			stringBuilder.AppendLine (message);
 			stringBuilder.AppendLine (
 				$"类型：{textTokenizer.Current.Type} " +
-				$"位置：{textTokenizer.Current.Index} " +
+				$"位置：{textTokenizer.Current.StartIndex} " +
 				$"长度：{textTokenizer.Current.Length} " +
 				$"值：{textTokenizer.Current.Value}"
 			);

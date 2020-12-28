@@ -17,37 +17,38 @@ namespace Eruru.TextTokenizer {
 		public bool AllowNumber { get; set; } = true;
 		public bool AllowString { get; set; } = true;
 		public bool AllowSingleQuotString { get; set; } = true;
-		public bool AllowCharactersBreakKeyword { get; set; } = true;
-		public List<char> BreakKeywordCharacters { get; private set; } = new List<char> ();
+		public bool AllowSymbolsBreakKeyword { get; set; } = true;
+		public Queue<char> Buffer { get; } = new Queue<char> ();
+		public int BufferLength { get; set; } = 500;
+		public int Index {
+
+			get => _Index;
+
+		}
 		public TextReader TextReader {
 
-			private get {
-				if (_TextReader is null) {
-					throw new Exception ($"未指定{nameof (TextReader)}");
-				}
-				return _TextReader;
-			}
-
 			set {
-				Index = 0;
 				_TextReader = value;
+				_Index = 0;
+				Buffer.Clear ();
 			}
 
 		}
-		public Queue<char> Buffer { get; } = new Queue<char> ();
-		public int BufferLength { get; set; } = 500;
-		public char Character { get; private set; }
-		public int Index { get; private set; }
 
-		static readonly char[] NumberCharacters = { '+', '-' };
+		static readonly char[] NumberStartCharacters = { '+', '-' };
 		static readonly char[] DecimalCharacters = { '.', 'E', 'e' };
 
-		readonly Dictionary<char, KeyValuePair<T, object>> Characters = new Dictionary<char, KeyValuePair<T, object>> ();
+		readonly Dictionary<char, T> Symbols = new Dictionary<char, T> ();
+		readonly Dictionary<string, KeyValuePair<T, object>> StringSymbols = new Dictionary<string, KeyValuePair<T, object>> ();
+		readonly List<TextTokenizerBlock<T>> Blocks = new List<TextTokenizerBlock<T>> ();
 		readonly Dictionary<string, KeyValuePair<T, object>> Keywords = new Dictionary<string, KeyValuePair<T, object>> ();
+		readonly List<char> BreakKeywordCharacters = new List<char> ();
+		readonly List<KeyValuePair<char, int>> TempBuffer = new List<KeyValuePair<char, int>> ();
 
 		TextReader _TextReader;
 		TextTokenizerToken<T> _Current;
 		bool NeedMoveNext = true;
+		int _Index;
 
 		public TextTokenizer (T endType, T unknownType, T integerType, T decimalType, T stringType) {
 			EndType = endType;
@@ -56,150 +57,167 @@ namespace Eruru.TextTokenizer {
 			DecimalType = decimalType;
 			StringType = stringType;
 		}
-		public TextTokenizer (TextReader textReader, T endType, T unknownType, T integerType, T decimalType, T stringType) : this (
-			endType,
-			unknownType,
-			integerType,
-			decimalType,
-			stringType
-		) {
-			TextReader = textReader ?? throw new ArgumentNullException (nameof (textReader));
+		public TextTokenizer (TextReader textReader, T endType, T unknownType, T integerType, T decimalType, T stringType) :
+			this (endType, unknownType, integerType, decimalType, stringType) {
+			_TextReader = textReader ?? throw new ArgumentNullException (nameof (textReader));
 		}
 
-		public void Add (char character, T type) {
-			Characters.Add (character, new KeyValuePair<T, object> (type, character));
+		public void AddSymbol (char symbol, T type) {
+			Symbols.Add (symbol, type);
 		}
-		public void Add (char character, T type, object value) {
-			Characters.Add (character, new KeyValuePair<T, object> (type, value));
+		public void AddStringSymbol (string symbol, T type) {
+			if (symbol is null) {
+				throw new ArgumentNullException (nameof (symbol));
+			}
+			StringSymbols.Add (symbol, new KeyValuePair<T, object> (type, symbol));
 		}
-		public void Add (string keyword, T type) {
+		public void AddStringSymbol (string symbol, T type, object value) {
+			if (symbol is null) {
+				throw new ArgumentNullException (nameof (symbol));
+			}
+			StringSymbols.Add (symbol, new KeyValuePair<T, object> (type, value));
+		}
+		public void AddKeyword (string keyword, T type) {
 			if (keyword is null) {
 				throw new ArgumentNullException (nameof (keyword));
 			}
 			Keywords.Add (keyword, new KeyValuePair<T, object> (type, keyword));
 		}
-		public void Add (string keyword, T type, object value) {
+		public void AddKeyword (string keyword, T type, object value) {
 			if (keyword is null) {
 				throw new ArgumentNullException (nameof (keyword));
 			}
 			Keywords.Add (keyword, new KeyValuePair<T, object> (type, value));
 		}
+		public void AddBlock (T type, string head, string tail) {
+			if (head is null) {
+				throw new ArgumentNullException (nameof (head));
+			}
+			if (tail is null) {
+				throw new ArgumentNullException (nameof (tail));
+			}
+			Blocks.Add (new TextTokenizerBlock<T> (type, head, tail));
+		}
+		public void AddBreakKeywordCharacter (char character) {
+			BreakKeywordCharacters.Add (character);
+		}
 
-		public string ReadTo (string end, bool allowNoEnd = false) {
+		public void SkipWhiteSpace () {
+			while (Peek () != -1) {
+				char character = PeekCharacter ();
+				if (!char.IsWhiteSpace (character)) {
+					break;
+				}
+				Read ();
+			}
+		}
+
+		public string ReadTo (string end, bool eatLastCharacter = true, bool allowNotFoundEnd = false) {
 			if (end is null) {
 				throw new ArgumentNullException (nameof (end));
 			}
 			StringBuilder stringBuilder = new StringBuilder ();
-			while (TextReader.Peek () > -1) {
-				PeekCharacter ();
-				if (Match (stringBuilder, end)) {
+			while (Peek () != -1) {
+				char character = PeekCharacter ();
+				if (Match (character, end, eatLastCharacter)) {
 					return stringBuilder.ToString ();
 				}
-				stringBuilder.Append (Character);
+				stringBuilder.Append (character);
 				Read ();
 			}
-			if (allowNoEnd) {
+			if (allowNotFoundEnd) {
 				return stringBuilder.ToString ();
 			}
-			throw new TextTokenizerException<T> ($"没有遇到{end}结束", this);
+			throw new TextTokenizerException<T> (this, $"没有遇到{end}结束");
 		}
 
-		public string ReadNumber (out bool isFloat) {
+		public void Read () {
+			_Index++;
+			if (Buffer.Count == BufferLength) {
+				Buffer.Dequeue ();
+			}
+			Buffer.Enqueue (PeekCharacter ());
+			if (TempBuffer.Count == 0) {
+				_TextReader.Read ();
+				return;
+			}
+			TempBuffer.RemoveAt (0);
+		}
+
+		public int Peek () {
+			if (TempBuffer.Count == 0) {
+				return _TextReader.Peek ();
+			}
+			return TempBuffer[0].Value;
+		}
+
+		public char PeekCharacter () {
+			if (TempBuffer.Count == 0) {
+				return (char)_TextReader.Peek ();
+			}
+			return TempBuffer[0].Key;
+		}
+
+		string ReadNumber (char character, out bool isDecimal) {
 			StringBuilder stringBuilder = new StringBuilder ();
-			isFloat = false;
-			while (TextReader.Peek () > -1) {
-				PeekCharacter ();
-				if (!char.IsDigit (Character) && Array.IndexOf (NumberCharacters, Character) == -1) {
-					if (Array.IndexOf (DecimalCharacters, Character) != -1) {
-						isFloat = true;
-					} else {
+			stringBuilder.Append (character);
+			isDecimal = false;
+			Read ();
+			while (Peek () != -1) {
+				character = PeekCharacter ();
+				if (!char.IsDigit (character) && Array.IndexOf (NumberStartCharacters, character) == -1) {
+					if (Array.IndexOf (DecimalCharacters, character) == -1) {
 						break;
+					} else {
+						isDecimal = true;
 					}
 				}
-				stringBuilder.Append (Character);
+				stringBuilder.Append (character);
 				Read ();
 			}
 			return stringBuilder.ToString ();
 		}
 
-		public string ReadString () {
+		string ReadString (int startIndex, char end) {
 			StringBuilder stringBuilder = new StringBuilder ();
-			char end = Character;
-			int index = Index;
-			int error = 0;
 			Read ();
-			while (TextReader.Peek () > -1) {
-				PeekCharacter ();
-				if (Character == '\\') {
-					stringBuilder.Append (Character);
+			while (Peek () != -1) {
+				char character = PeekCharacter ();
+				if (character == '\\') {
+					stringBuilder.Append (character);
 					Read ();
-					if (TextReader.Peek () == -1) {
-						error = 1;
+					if (Peek () == -1) {
 						break;
 					}
-					stringBuilder.Append (PeekCharacter ());
-					Read ();
-					continue;
-				}
-				if (Character == end) {
+					character = PeekCharacter ();
+				} else if (character == end) {
 					Read ();
 					return stringBuilder.ToString ();
 				}
-				stringBuilder.Append (Character);
+				stringBuilder.Append (character);
 				Read ();
 			}
-			Current = new TextTokenizerToken<T> () {
-				Type = StringType,
-				Index = index,
-				Length = stringBuilder.Length + 1,
-				Value = stringBuilder.ToString ()
-			};
-			throw new TextTokenizerException<T> (error == 0 ? "字符串没有结束" : "转义符遇到流结尾", this);
+			_Current = new TextTokenizerToken<T> (StringType, startIndex, stringBuilder.Length + 1, stringBuilder.ToString ());
+			throw new TextTokenizerException<T> (this, "字符串没有结束");
 		}
 
-		public string ReadKeyword () {
+		string ReadKeyword (char character) {
 			StringBuilder stringBuilder = new StringBuilder ();
-			while (TextReader.Peek () > -1) {
-				PeekCharacter ();
-				if (char.IsWhiteSpace (Character) || BreakKeywordCharacters.Contains (Character) || (AllowCharactersBreakKeyword && Characters.ContainsKey (Character))) {
+			stringBuilder.Append (character);
+			Read ();
+			while (Peek () != -1) {
+				character = PeekCharacter ();
+				if (char.IsWhiteSpace (character) || BreakKeywordCharacters.Contains (character) || (AllowSymbolsBreakKeyword && Symbols.ContainsKey (character))) {
 					if (stringBuilder.Length == 0) {
-						stringBuilder.Append (Character);
+						stringBuilder.Append (character);
 						Read ();
 					}
 					break;
 				}
-				stringBuilder.Append (Character);
+				stringBuilder.Append (character);
 				Read ();
 			}
 			return stringBuilder.ToString ();
-		}
-
-		public void SkipWhiteSpace () {
-			while (TextReader.Peek () > -1) {
-				PeekCharacter ();
-				if (!char.IsWhiteSpace (Character)) {
-					break;
-				}
-				Read ();
-			}
-		}
-
-		public int Read () {
-			Index++;
-			if (Buffer.Count > BufferLength) {
-				Buffer.Dequeue ();
-			}
-			Buffer.Enqueue (Character);
-			return TextReader.Read ();
-		}
-
-		public int Peek () {
-			return TextReader.Peek ();
-		}
-
-		char PeekCharacter () {
-			Character = (char)TextReader.Peek ();
-			return Character;
 		}
 
 		bool Match (StringBuilder stringBuilder, string end) {
@@ -209,7 +227,8 @@ namespace Eruru.TextTokenizer {
 			if (end is null) {
 				throw new ArgumentNullException (nameof (end));
 			}
-			if (Character != end[end.Length - 1]) {
+			char character = PeekCharacter ();
+			if (character != end[end.Length - 1]) {
 				return false;
 			}
 			if (stringBuilder.Length + 1 < end.Length) {
@@ -226,10 +245,33 @@ namespace Eruru.TextTokenizer {
 			return true;
 		}
 
+		bool Match (char character, string value, bool eatLastCharacter = true) {
+			if (value is null) {
+				throw new ArgumentNullException (nameof (value));
+			}
+			if (value.Length == 0 || character != value[0]) {
+				return false;
+			}
+			if (value.Length == 1) {
+				return true;
+			}
+			while (_TextReader.Peek () != -1 && TempBuffer.Count < value.Length) {
+				TempBuffer.Add (new KeyValuePair<char, int> ((char)_TextReader.Peek (), _TextReader.Read ()));
+			}
+			if (TextTokenizerApi.StartsWith (TempBuffer, value)) {
+				int length = eatLastCharacter ? value.Length : value.Length - 1;
+				for (int i = 0; i < length; i++) {
+					Read ();
+				}
+				return true;
+			}
+			return false;
+		}
+
 		#region IDisposable
 
 		public void Dispose () {
-			TextReader.Dispose ();
+			_TextReader.Dispose ();
 		}
 
 		#endregion
@@ -245,8 +287,6 @@ namespace Eruru.TextTokenizer {
 				return _Current;
 			}
 
-			private set => _Current = value;
-
 		}
 
 		object IEnumerator.Current => Current;
@@ -254,69 +294,63 @@ namespace Eruru.TextTokenizer {
 		public bool MoveNext () {
 			NeedMoveNext = false;
 			SkipWhiteSpace ();
-			TextTokenizerToken<T> token = new TextTokenizerToken<T> {
-				Index = Index
-			};
-			if (TextReader.Peek () == -1) {
-				token.Type = EndType;
-				Current = token;
+			if (Peek () == -1) {
+				_Current = new TextTokenizerToken<T> (EndType, Index, 0, null);
 				return false;
 			}
-			if (Characters.TryGetValue (Character, out KeyValuePair<T, object> type)) {
-				token.Type = type.Key;
-				token.Length = 1;
-				token.Value = type.Value;
+			char character = PeekCharacter ();
+			int startIndex = Index;
+			string text;
+			foreach (TextTokenizerBlock<T> block in Blocks) {
+				if (Match (character, block.Head)) {
+					text = ReadTo (block.Tail);
+					_Current = new TextTokenizerToken<T> (block.Type, startIndex, text.Length, text);
+					return true;
+				}
+			}
+			foreach (KeyValuePair<string, KeyValuePair<T, object>> stringSymbol in StringSymbols) {
+				if (Match (character, stringSymbol.Key)) {
+					_Current = new TextTokenizerToken<T> (stringSymbol.Value.Key, startIndex, stringSymbol.Key.Length, stringSymbol.Value.Value);
+					return true;
+				}
+			}
+			if (Symbols.TryGetValue (character, out T type)) {
+				_Current = new TextTokenizerToken<T> (type, startIndex, 1, character);
 				Read ();
-				Current = token;
 				return true;
 			}
-			string text;
-			if (AllowNumber && (char.IsDigit (Character) || Array.IndexOf (NumberCharacters, Character) > -1)) {
-				text = ReadNumber (out bool isFloat);
-				token.Length = text.Length;
-				if (isFloat) {
+			if (AllowString && (character == '"' || (AllowSingleQuotString && character == '\''))) {
+				text = ReadString (startIndex, character);
+				_Current = new TextTokenizerToken<T> (StringType, startIndex, text.Length + 2, text);
+				return true;
+			}
+			if (AllowNumber && (char.IsDigit (character) || Array.IndexOf (NumberStartCharacters, character) != -1)) {
+				text = ReadNumber (character, out bool isDecimal);
+				if (isDecimal) {
 					if (decimal.TryParse (text, NumberStyles.Float, null, out decimal result)) {
-						token.Type = DecimalType;
-						token.Value = result;
-						Current = token;
+						_Current = new TextTokenizerToken<T> (DecimalType, startIndex, text.Length, result);
 						return true;
 					}
 				} else {
 					if (long.TryParse (text, out long result)) {
-						token.Type = IntegerType;
-						token.Value = result;
-						Current = token;
+						_Current = new TextTokenizerToken<T> (IntegerType, startIndex, text.Length, result);
 						return true;
 					}
 				}
-				token.Type = UnknownType;
-				token.Value = text;
-				Current = token;
+				_Current = new TextTokenizerToken<T> (UnknownType, startIndex, text.Length, text);
 				return true;
 			}
-			if ((AllowSingleQuotString && Character == '\'') || (AllowSingleQuotString && Character == '"')) {
-				text = ReadString ();
-				token.Type = StringType;
-				token.Length = text.Length + 2;
-				token.Value = text;
-				Current = token;
+			text = ReadKeyword (character);
+			if (Keywords.TryGetValue (text, out KeyValuePair<T, object> keyValuePair)) {
+				_Current = new TextTokenizerToken<T> (keyValuePair.Key, startIndex, text.Length, keyValuePair.Value);
 				return true;
 			}
-			text = ReadKeyword ();
-			token.Length = text.Length;
-			if (Keywords.TryGetValue (text, out type)) {
-				token.Type = type.Key;
-				token.Value = type.Value;
-			} else {
-				token.Type = UnknownType;
-				token.Value = text;
-			}
-			Current = token;
+			_Current = new TextTokenizerToken<T> (UnknownType, startIndex, text.Length, text);
 			return true;
 		}
 
 		public void Reset () {
-			throw new Exception ($"{nameof (TextReader)}无法{nameof (Reset)}");
+			throw new Exception ($"{nameof (TextReader)}无法{nameof (Reset)}，但你可以为{nameof (TextReader)}属性赋予一个新的{nameof (TextReader)}实现{nameof (Reset)}");
 		}
 
 		#endregion

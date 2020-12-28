@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace Eruru.TextTokenizer {
@@ -15,6 +16,24 @@ namespace Eruru.TextTokenizer {
 				throw new ArgumentNullException (nameof (message));
 			}
 			typeof (Exception).GetField ("_message", BindingFlags).SetValue (instance, message);
+		}
+
+		public static bool StartsWith (List<KeyValuePair<char, int>> buffer, string value) {
+			if (buffer is null) {
+				throw new ArgumentNullException (nameof (buffer));
+			}
+			if (value is null) {
+				throw new ArgumentNullException (nameof (value));
+			}
+			if (buffer.Count < value.Length) {
+				return false;
+			}
+			for (int i = 0; i < value.Length; i++) {
+				if (buffer[i].Key != value[i]) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		public static bool IsNullOrWhiteSpace (string text) {
