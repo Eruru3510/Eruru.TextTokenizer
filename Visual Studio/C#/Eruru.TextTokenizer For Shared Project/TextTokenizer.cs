@@ -112,7 +112,7 @@ namespace Eruru.TextTokenizer {
 			}
 		}
 
-		public string ReadTo (string end, bool eatLastCharacter = true, bool allowNotFoundEnd = false) {
+		public string ReadTo (string end, bool eatLastCharacter = true, bool allowNotFoundEnd = false) {//todo 支持是否忽略大小写
 			if (end is null) {
 				throw new ArgumentNullException (nameof (end));
 			}
