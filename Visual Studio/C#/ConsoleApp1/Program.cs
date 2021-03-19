@@ -32,7 +32,7 @@ namespace ConsoleApp1 {
 					</body>//行注释
 					<script>
 						document.getElementById ('a').innerHTML = '<div></div>';
-					</script>
+					</ScRiPt>
 				</html>"
 			);
 			TextTokenizer<HtmlTokenType> textTokenizer = new TextTokenizer<HtmlTokenType> (
@@ -41,7 +41,8 @@ namespace ConsoleApp1 {
 				HtmlTokenType.String,
 				HtmlTokenType.Integer,
 				HtmlTokenType.Decimal,
-				HtmlTokenType.String
+				HtmlTokenType.String,
+				true
 			);
 			textTokenizer.AddSymbol ('<', HtmlTokenType.LeftAngleBracket);
 			textTokenizer.AddSymbol ('>', HtmlTokenType.RightAngleBracket);

@@ -12,6 +12,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)TextTokenizerApi.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TextTokenizerBlock.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TextTokenizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TextTokenizerCharComparer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TextTokenizerException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TextTokenizerToken.cs" />
   </ItemGroup>

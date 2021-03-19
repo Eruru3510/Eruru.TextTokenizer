@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Eruru.TextTokenizer {
 
-	public struct TextTokenizerBlock<T> where T : Enum {
+	struct TextTokenizerBlock<T> where T : Enum {
 
 		public T Type { get; }
 		public string Head { get; }

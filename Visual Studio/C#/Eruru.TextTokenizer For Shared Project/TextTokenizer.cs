@@ -18,6 +18,7 @@ namespace Eruru.TextTokenizer {
 		public bool AllowString { get; set; } = true;
 		public bool AllowSingleQuotString { get; set; } = true;
 		public bool AllowSymbolsBreakKeyword { get; set; } = true;
+		public bool IgnoreCase { get; } = false;
 		public Queue<char> Buffer { get; } = new Queue<char> ();
 		public int BufferLength { get; set; } = 500;
 		public int Index {
@@ -38,10 +39,10 @@ namespace Eruru.TextTokenizer {
 		static readonly char[] NumberStartCharacters = { '+', '-' };
 		static readonly char[] DecimalCharacters = { '.', 'E', 'e' };
 
-		readonly Dictionary<char, T> Symbols = new Dictionary<char, T> ();
+		readonly Dictionary<char, T> Symbols;
 		readonly Dictionary<string, KeyValuePair<T, object>> StringSymbols = new Dictionary<string, KeyValuePair<T, object>> ();
+		readonly Dictionary<string, KeyValuePair<T, object>> Keywords;
 		readonly List<TextTokenizerBlock<T>> Blocks = new List<TextTokenizerBlock<T>> ();
-		readonly Dictionary<string, KeyValuePair<T, object>> Keywords = new Dictionary<string, KeyValuePair<T, object>> ();
 		readonly List<char> BreakKeywordCharacters = new List<char> ();
 		readonly List<KeyValuePair<char, int>> TempBuffer = new List<KeyValuePair<char, int>> ();
 
@@ -50,15 +51,18 @@ namespace Eruru.TextTokenizer {
 		bool NeedMoveNext = true;
 		int _Index;
 
-		public TextTokenizer (T endType, T unknownType, T integerType, T decimalType, T stringType) {
+		public TextTokenizer (T endType, T unknownType, T integerType, T decimalType, T stringType, bool ignoreCase = false) {
 			EndType = endType;
 			UnknownType = unknownType;
 			IntegerType = integerType;
 			DecimalType = decimalType;
 			StringType = stringType;
+			IgnoreCase = ignoreCase;
+			Symbols = IgnoreCase ? new Dictionary<char, T> (new TextTokenizerCharComparer ()) : new Dictionary<char, T> ();
+			Keywords = new Dictionary<string, KeyValuePair<T, object>> (IgnoreCase ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 		}
-		public TextTokenizer (TextReader textReader, T endType, T unknownType, T integerType, T decimalType, T stringType) :
-			this (endType, unknownType, integerType, decimalType, stringType) {
+		public TextTokenizer (TextReader textReader, T endType, T unknownType, T integerType, T decimalType, T stringType, bool ignoreCase = false) :
+			this (endType, unknownType, integerType, decimalType, stringType, ignoreCase) {
 			_TextReader = textReader ?? throw new ArgumentNullException (nameof (textReader));
 		}
 
@@ -112,7 +116,7 @@ namespace Eruru.TextTokenizer {
 			}
 		}
 
-		public string ReadTo (string end, bool eatLastCharacter = true, bool allowNotFoundEnd = false) {//todo 支持是否忽略大小写
+		public string ReadTo (string end, bool eatLastCharacter = true, bool allowNotFoundEnd = false) {
 			if (end is null) {
 				throw new ArgumentNullException (nameof (end));
 			}
@@ -220,36 +224,11 @@ namespace Eruru.TextTokenizer {
 			return stringBuilder.ToString ();
 		}
 
-		bool Match (StringBuilder stringBuilder, string end) {
-			if (stringBuilder is null) {
-				throw new ArgumentNullException (nameof (stringBuilder));
-			}
-			if (end is null) {
-				throw new ArgumentNullException (nameof (end));
-			}
-			char character = PeekCharacter ();
-			if (character != end[end.Length - 1]) {
-				return false;
-			}
-			if (stringBuilder.Length + 1 < end.Length) {
-				return false;
-			}
-			int start = stringBuilder.Length + 1 - end.Length;
-			int length = end.Length - 1;
-			for (int i = 0; i < length; i++) {
-				if (stringBuilder[start + i] != end[i]) {
-					return false;
-				}
-			}
-			stringBuilder.Remove (start, length);
-			return true;
-		}
-
 		bool Match (char character, string value, bool eatLastCharacter = true) {
 			if (value is null) {
 				throw new ArgumentNullException (nameof (value));
 			}
-			if (value.Length == 0 || character != value[0]) {
+			if (value.Length == 0 || !TextTokenizerApi.Equals (character, value[0], IgnoreCase)) {
 				return false;
 			}
 			if (value.Length == 1) {
@@ -258,7 +237,7 @@ namespace Eruru.TextTokenizer {
 			while (_TextReader.Peek () != -1 && TempBuffer.Count < value.Length) {
 				TempBuffer.Add (new KeyValuePair<char, int> ((char)_TextReader.Peek (), _TextReader.Read ()));
 			}
-			if (TextTokenizerApi.StartsWith (TempBuffer, value)) {
+			if (TextTokenizerApi.StartsWith (TempBuffer, value, IgnoreCase)) {
 				int length = eatLastCharacter ? value.Length : value.Length - 1;
 				for (int i = 0; i < length; i++) {
 					Read ();
