@@ -3,36 +3,44 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Eruru.TextTokenizer For Shared Project", "Eruru.TextTokenizer For Shared Project\Eruru.TextTokenizer For Shared Project.shproj", "{3AC244E4-BFAB-4BE8-97BA-CC0893E71E99}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{38EFC25C-3EC4-4A7B-9A71-F9D57F26D190}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTestProject1", "UnitTestProject1\UnitTestProject1.csproj", "{2AE00F80-F056-4F0D-BB08-7ABCE343A127}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eruru.TextTokenizer", "Eruru.TextTokenizer\Eruru.TextTokenizer.csproj", "{BF0E2739-A36B-4A90-8DB2-96F5AC47B2B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eruru.TextTokenizer", "Eruru.TextTokenizer\Eruru.TextTokenizer.csproj", "{BF0E2739-A36B-4A90-8DB2-96F5AC47B2B5}"
 EndProject
 Global
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		Eruru.TextTokenizer For Shared Project\Eruru.TextTokenizer For Shared Project.projitems*{3ac244e4-bfab-4be8-97ba-cc0893e71e99}*SharedItemsImports = 13
-		Eruru.TextTokenizer For Shared Project\Eruru.TextTokenizer For Shared Project.projitems*{bf0e2739-a36b-4a90-8db2-96f5ac47b2b5}*SharedItemsImports = 5
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{38EFC25C-3EC4-4A7B-9A71-F9D57F26D190}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{38EFC25C-3EC4-4A7B-9A71-F9D57F26D190}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38EFC25C-3EC4-4A7B-9A71-F9D57F26D190}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{38EFC25C-3EC4-4A7B-9A71-F9D57F26D190}.Debug|x86.Build.0 = Debug|Any CPU
 		{38EFC25C-3EC4-4A7B-9A71-F9D57F26D190}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{38EFC25C-3EC4-4A7B-9A71-F9D57F26D190}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38EFC25C-3EC4-4A7B-9A71-F9D57F26D190}.Release|x86.ActiveCfg = Release|Any CPU
+		{38EFC25C-3EC4-4A7B-9A71-F9D57F26D190}.Release|x86.Build.0 = Release|Any CPU
 		{2AE00F80-F056-4F0D-BB08-7ABCE343A127}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2AE00F80-F056-4F0D-BB08-7ABCE343A127}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AE00F80-F056-4F0D-BB08-7ABCE343A127}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2AE00F80-F056-4F0D-BB08-7ABCE343A127}.Debug|x86.Build.0 = Debug|Any CPU
 		{2AE00F80-F056-4F0D-BB08-7ABCE343A127}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2AE00F80-F056-4F0D-BB08-7ABCE343A127}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AE00F80-F056-4F0D-BB08-7ABCE343A127}.Release|x86.ActiveCfg = Release|Any CPU
+		{2AE00F80-F056-4F0D-BB08-7ABCE343A127}.Release|x86.Build.0 = Release|Any CPU
 		{BF0E2739-A36B-4A90-8DB2-96F5AC47B2B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BF0E2739-A36B-4A90-8DB2-96F5AC47B2B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF0E2739-A36B-4A90-8DB2-96F5AC47B2B5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BF0E2739-A36B-4A90-8DB2-96F5AC47B2B5}.Debug|x86.Build.0 = Debug|Any CPU
 		{BF0E2739-A36B-4A90-8DB2-96F5AC47B2B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BF0E2739-A36B-4A90-8DB2-96F5AC47B2B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF0E2739-A36B-4A90-8DB2-96F5AC47B2B5}.Release|x86.ActiveCfg = Release|Any CPU
+		{BF0E2739-A36B-4A90-8DB2-96F5AC47B2B5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

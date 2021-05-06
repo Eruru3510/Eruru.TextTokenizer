@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Eruru.TextTokenizer {
 
-	public class TextTokenizer<T> : IDisposable, IEnumerator<TextTokenizerToken<T>>, IEnumerable<TextTokenizerToken<T>> where T : Enum {
+	public class TextTokenizer<T> : IDisposable, IEnumerator<TextTokenizerToken<T>>, IEnumerable<TextTokenizerToken<T>> {
 
 		public T EndType { get; set; }
 		public T UnknownType { get; set; }
@@ -20,7 +20,7 @@ namespace Eruru.TextTokenizer {
 		public bool AllowSymbolsBreakKeyword { get; set; } = true;
 		public bool IgnoreCase { get; } = false;
 		public Queue<char> Buffer { get; } = new Queue<char> ();
-		public int BufferLength { get; set; } = 500;
+		public int BufferSize { get; set; } = 500;
 		public int Index {
 
 			get => _Index;
@@ -40,18 +40,25 @@ namespace Eruru.TextTokenizer {
 		static readonly char[] DecimalCharacters = { '.', 'E', 'e' };
 
 		readonly Dictionary<char, T> Symbols;
-		readonly Dictionary<string, KeyValuePair<T, object>> StringSymbols = new Dictionary<string, KeyValuePair<T, object>> ();
+		readonly Dictionary<string, KeyValuePair<T, object>> StringSymbols;
 		readonly Dictionary<string, KeyValuePair<T, object>> Keywords;
 		readonly List<TextTokenizerBlock<T>> Blocks = new List<TextTokenizerBlock<T>> ();
 		readonly List<char> BreakKeywordCharacters = new List<char> ();
-		readonly List<KeyValuePair<char, int>> TempBuffer = new List<KeyValuePair<char, int>> ();
+		readonly List<KeyValuePair<char, int>> CharacterBuffer = new List<KeyValuePair<char, int>> ();
 
 		TextReader _TextReader;
 		TextTokenizerToken<T> _Current;
 		bool NeedMoveNext = true;
 		int _Index;
 
-		public TextTokenizer (T endType, T unknownType, T integerType, T decimalType, T stringType, bool ignoreCase = false) {
+		public TextTokenizer (TextReader textReader, T endType, T unknownType, T integerType, T decimalType, T stringType, bool ignoreCase)
+			: this (endType, unknownType, integerType, decimalType, stringType, ignoreCase) {
+			TextReader = textReader ?? throw new ArgumentNullException (nameof (textReader));
+		}
+		public TextTokenizer (TextReader textReader, T endType, T unknownType, T integerType, T decimalType, T stringType)
+			: this (textReader, endType, unknownType, integerType, decimalType, stringType, false) {
+		}
+		public TextTokenizer (T endType, T unknownType, T integerType, T decimalType, T stringType, bool ignoreCase) {
 			EndType = endType;
 			UnknownType = unknownType;
 			IntegerType = integerType;
@@ -59,51 +66,60 @@ namespace Eruru.TextTokenizer {
 			StringType = stringType;
 			IgnoreCase = ignoreCase;
 			Symbols = IgnoreCase ? new Dictionary<char, T> (new TextTokenizerCharComparer ()) : new Dictionary<char, T> ();
-			Keywords = new Dictionary<string, KeyValuePair<T, object>> (IgnoreCase ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+			StringSymbols = IgnoreCase ? new Dictionary<string, KeyValuePair<T, object>> (StringComparer.OrdinalIgnoreCase) : new Dictionary<string, KeyValuePair<T, object>> ();
+			Keywords = IgnoreCase ? new Dictionary<string, KeyValuePair<T, object>> (StringComparer.OrdinalIgnoreCase) : new Dictionary<string, KeyValuePair<T, object>> ();
 		}
-		public TextTokenizer (TextReader textReader, T endType, T unknownType, T integerType, T decimalType, T stringType, bool ignoreCase = false) :
-			this (endType, unknownType, integerType, decimalType, stringType, ignoreCase) {
-			_TextReader = textReader ?? throw new ArgumentNullException (nameof (textReader));
+		public TextTokenizer (T endType, T unknownType, T integerType, T decimalType, T stringType)
+			: this (endType, unknownType, integerType, decimalType, stringType, false) {
 		}
 
 		public void AddSymbol (char symbol, T type) {
-			Symbols.Add (symbol, type);
+			Symbols[symbol] = type;
 		}
+
 		public void AddStringSymbol (string symbol, T type) {
 			if (symbol is null) {
 				throw new ArgumentNullException (nameof (symbol));
 			}
-			StringSymbols.Add (symbol, new KeyValuePair<T, object> (type, symbol));
+			StringSymbols[symbol] = new KeyValuePair<T, object> (type, symbol);
 		}
 		public void AddStringSymbol (string symbol, T type, object value) {
 			if (symbol is null) {
 				throw new ArgumentNullException (nameof (symbol));
 			}
-			StringSymbols.Add (symbol, new KeyValuePair<T, object> (type, value));
+			StringSymbols[symbol] = new KeyValuePair<T, object> (type, value);
 		}
+
 		public void AddKeyword (string keyword, T type) {
 			if (keyword is null) {
 				throw new ArgumentNullException (nameof (keyword));
 			}
-			Keywords.Add (keyword, new KeyValuePair<T, object> (type, keyword));
+			Keywords[keyword] = new KeyValuePair<T, object> (type, keyword);
 		}
 		public void AddKeyword (string keyword, T type, object value) {
 			if (keyword is null) {
 				throw new ArgumentNullException (nameof (keyword));
 			}
-			Keywords.Add (keyword, new KeyValuePair<T, object> (type, value));
+			Keywords[keyword] = new KeyValuePair<T, object> (type, value);
 		}
-		public void AddBlock (T type, string head, string tail) {
+
+		public void AddBlock (string head, string tail, T type) {
 			if (head is null) {
 				throw new ArgumentNullException (nameof (head));
 			}
 			if (tail is null) {
 				throw new ArgumentNullException (nameof (tail));
 			}
-			Blocks.Add (new TextTokenizerBlock<T> (type, head, tail));
+			Blocks.Add (new TextTokenizerBlock<T> (head, tail, type));
 		}
 		public void AddBreakKeywordCharacter (char character) {
 			BreakKeywordCharacters.Add (character);
+		}
+		public void AddBreakKeywordCharacter (params char[] characters) {
+			if (characters is null) {
+				throw new ArgumentNullException (nameof (characters));
+			}
+			BreakKeywordCharacters.AddRange (characters);
 		}
 
 		public void SkipWhiteSpace () {
@@ -137,29 +153,29 @@ namespace Eruru.TextTokenizer {
 
 		public void Read () {
 			_Index++;
-			if (Buffer.Count == BufferLength) {
+			if (Buffer.Count == BufferSize) {
 				Buffer.Dequeue ();
 			}
 			Buffer.Enqueue (PeekCharacter ());
-			if (TempBuffer.Count == 0) {
+			if (CharacterBuffer.Count == 0) {
 				_TextReader.Read ();
 				return;
 			}
-			TempBuffer.RemoveAt (0);
+			CharacterBuffer.RemoveAt (0);
 		}
 
 		public int Peek () {
-			if (TempBuffer.Count == 0) {
+			if (CharacterBuffer.Count == 0) {
 				return _TextReader.Peek ();
 			}
-			return TempBuffer[0].Value;
+			return CharacterBuffer[0].Value;
 		}
 
 		public char PeekCharacter () {
-			if (TempBuffer.Count == 0) {
+			if (CharacterBuffer.Count == 0) {
 				return (char)_TextReader.Peek ();
 			}
-			return TempBuffer[0].Key;
+			return CharacterBuffer[0].Key;
 		}
 
 		string ReadNumber (char character, out bool isDecimal) {
@@ -234,10 +250,10 @@ namespace Eruru.TextTokenizer {
 			if (value.Length == 1) {
 				return true;
 			}
-			while (_TextReader.Peek () != -1 && TempBuffer.Count < value.Length) {
-				TempBuffer.Add (new KeyValuePair<char, int> ((char)_TextReader.Peek (), _TextReader.Read ()));
+			while (_TextReader.Peek () != -1 && CharacterBuffer.Count < value.Length) {
+				CharacterBuffer.Add (new KeyValuePair<char, int> ((char)_TextReader.Peek (), _TextReader.Read ()));
 			}
-			if (TextTokenizerApi.StartsWith (TempBuffer, value, IgnoreCase)) {
+			if (TextTokenizerApi.StartsWith (CharacterBuffer, value, IgnoreCase)) {
 				int length = eatLastCharacter ? value.Length : value.Length - 1;
 				for (int i = 0; i < length; i++) {
 					Read ();

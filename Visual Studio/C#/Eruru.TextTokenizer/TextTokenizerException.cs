@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Eruru.TextTokenizer {
 
-	public class TextTokenizerException<T> : Exception where T : Enum {
+	public class TextTokenizerException<T> : Exception {
 
 		public TextTokenizerException (TextTokenizer<T> textTokenizer, string message) {
 			if (textTokenizer is null) {
@@ -21,7 +21,7 @@ namespace Eruru.TextTokenizer {
 				$"值：{textTokenizer.Current.Value}"
 			);
 			stringBuilder.AppendLine (new string (textTokenizer.Buffer.ToArray ()));
-			TextTokenizerApi.SetExceptionMessage (this, stringBuilder.ToString ());
+			this.SetMessage (stringBuilder.ToString ());
 		}
 
 	}

@@ -2,7 +2,7 @@
 
 namespace Eruru.TextTokenizer {
 
-	public struct TextTokenizerToken<T> where T : Enum {
+	public class TextTokenizerToken<T> {
 
 		public T Type { get; }
 		public int StartIndex { get; }

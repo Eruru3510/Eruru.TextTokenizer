@@ -43,10 +43,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HtmlTokenType.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="JsonTokenType.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Eruru.TextTokenizer\Eruru.TextTokenizer.csproj">
